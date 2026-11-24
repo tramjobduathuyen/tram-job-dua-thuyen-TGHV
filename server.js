@@ -2,7 +2,7 @@ const express=require("express"),session=require("express-session"),SQLiteStoreF
 const sqlite3=require("sqlite3").verbose(),bcrypt=require("bcryptjs"),helmet=require("helmet"),rateLimit=require("express-rate-limit");
 const multer=require("multer"),path=require("path"),fs=require("fs");
 const app=express(),SQLiteStore=SQLiteStoreFactory(session),PORT=Number(process.env.PORT||3000);
-const DATA=path.join(__dirname,"data"),PROOFS=path.join(DATA,"proofs");
+const DATA=process.env.DATA_DIR||path.join(__dirname,"data"),PROOFS=path.join(DATA,"proofs");
 fs.mkdirSync(PROOFS,{recursive:true});
 const db=new sqlite3.Database(path.join(DATA,"tram-job.sqlite"));
 db.serialize(()=>{
@@ -123,5 +123,8 @@ app.patch("/api/members/:id",auth,admin,wrap(async(q,s)=>{
 }));
 app.get("/api/transactions",auth,admin,wrap(async(q,s)=>s.json({rows:await all("SELECT t.*,j.code FROM transactions t LEFT JOIN jobs j ON j.id=t.job_id ORDER BY t.id DESC")})));
 app.use("/api",(e,q,s,n)=>{console.error(e);s.status(400).json({error:e.message||"Có lỗi máy chủ."})});
-app.get("*",(q,s)=>s.sendFile(path.join(__dirname,"public","index.html")));
+app.get("/",(q,s)=>s.sendFile(path.join(__dirname,"index.html")));
+app.get("/style.css",(q,s)=>s.sendFile(path.join(__dirname,"style.css")));
+app.get("/app.js",(q,s)=>s.sendFile(path.join(__dirname,"app.js")));
+app.get("*",(q,s)=>s.status(404).send("Không tìm thấy trang."));
 init().then(()=>app.listen(PORT,()=>console.log("Tram Job TGHV running on "+PORT))).catch(e=>{console.error(e);process.exit(1)});
